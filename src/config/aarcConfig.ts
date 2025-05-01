@@ -5,10 +5,10 @@ import {
   TransactionErrorData,
   SourceConnectorName,
 } from "@aarc-xyz/fundkit-web-sdk";
-import { JOJO_DEPOSIT_ADDRESS, SupportedChainId } from "../constants";
+import { SYNFUTURES_DEPOSIT_ADDRESS, SupportedChainId } from "../constants";
 
 export const aarcConfig: FKConfig = {
-  appName: "JOJO x Aarc",
+  appName: "Synfutures x Aarc",
   module: {
     exchange: {
       enabled: true,
@@ -26,12 +26,13 @@ export const aarcConfig: FKConfig = {
   },
   destination: {
     contract: {
-      contractAddress: JOJO_DEPOSIT_ADDRESS[SupportedChainId.BASE],
-      contractName: "JOJO v1 Deposit",
+      contractAddress: SYNFUTURES_DEPOSIT_ADDRESS[SupportedChainId.BASE],
+      contractName: "Synfutures Deposit",
       contractPayload: "0x", // This will be updated dynamically
       contractGasLimit: "300000", // Standard gas limit, can be adjusted if needed
+      contractLogoURI: "https://oyster.synfutures.com/favicon.ico",
     },
-    walletAddress: JOJO_DEPOSIT_ADDRESS[SupportedChainId.BASE],
+    walletAddress: SYNFUTURES_DEPOSIT_ADDRESS[SupportedChainId.BASE],
     chainId: 8453, // Base chain ID
     tokenAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC on Base
   },

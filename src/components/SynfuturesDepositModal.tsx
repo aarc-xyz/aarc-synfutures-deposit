@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
 import { ethers } from 'ethers';
 import { AarcFundKitModal } from '@aarc-xyz/fundkit-web-sdk';
-import { JOJO_DEPOSIT_ADDRESS, SupportedChainId } from '../constants';
+import { SYNFUTURES_DEPOSIT_ADDRESS, SupportedChainId, USDC_ADDRESS_WITHOUT_0X } from '../constants';
 import { Navbar } from './Navbar';
 import StyledConnectButton from './StyledConnectButton';
 
-export const JojoDepositModal = ({ aarcModal }: { aarcModal: AarcFundKitModal }) => {
+export const SynfuturesDepositModal = ({ aarcModal }: { aarcModal: AarcFundKitModal }) => {
     const [amount, setAmount] = useState('20');
     const [isProcessing, setIsProcessing] = useState(false);
     const { disconnect } = useDisconnect();
@@ -38,27 +38,31 @@ export const JojoDepositModal = ({ aarcModal }: { aarcModal: AarcFundKitModal })
             setIsProcessing(true);
 
             // Generate calldata for deposit function on Diamond contract
-            const jojoDepositInterface = new ethers.Interface([
-                "function deposit(uint256 primaryAmount, uint256 secondaryAmount, address to) external",
+            const synfuturesDepositInterface = new ethers.Interface([
+                "function deposit(bytes32 depositor_paloma_address) external",
             ]);
 
             const amountInWei = ethers.parseUnits(amount, 6); // USDC has 6 decimals
 
-            const contractPayload = jojoDepositInterface.encodeFunctionData("deposit", [
-                amountInWei,
-                ethers.parseUnits("0", 6),
-                address,
+            // Pad to 12 bytes (24 hex chars)
+            const amountHexPadded = ethers.zeroPadValue(ethers.toBeHex(amountInWei), 12);
+
+            const depositorPalomaAddress = "0x" + amountHexPadded.slice(2) + USDC_ADDRESS_WITHOUT_0X;
+
+            console.log("depositorPalomaAddress", depositorPalomaAddress);
+
+            const contractPayload = synfuturesDepositInterface.encodeFunctionData("deposit", [
+                depositorPalomaAddress
             ]);
 
             aarcModal.updateRequestedAmount(Number(amount));
 
             // Update Aarc's destination contract configuration
             aarcModal.updateDestinationContract({
-                contractAddress: JOJO_DEPOSIT_ADDRESS[SupportedChainId.BASE],
-                contractName: "JOJO v1 Deposit",
+                contractAddress: SYNFUTURES_DEPOSIT_ADDRESS[SupportedChainId.BASE],
+                contractName: "Synfutures Deposit",
                 contractGasLimit: "800000",
-                contractPayload: contractPayload,
-                contractLogoURI: "https://docs.jojo.exchange/img/favicon.png"
+                contractPayload: contractPayload
             });
 
             // Open the Aarc modal
@@ -87,8 +91,8 @@ export const JojoDepositModal = ({ aarcModal }: { aarcModal: AarcFundKitModal })
 
                     {/* Amount Input */}
                     <div className="w-full">
-                        <a href="https://v1.jojo.exchange/trade/base/BTC-USDC" target="_blank" rel="noopener noreferrer" className="block">
-                            <h3 className="text-[14px] font-semibold text-[#F6F6F6] mb-4">Deposit in <span className="underline text-[#A5E547]">JOJO v1</span></h3>
+                        <a href="https://oyster.synfutures.com/#/portfolio" target="_blank" rel="noopener noreferrer" className="block">
+                            <h3 className="text-[14px] font-semibold text-[#F6F6F6] mb-4">Deposit in <span className="underline text-[#A5E547]">Synfutures</span></h3>
                         </a>
                         <div className="flex items-center p-3 bg-[#2A2A2A] border border-[#424242] rounded-2xl">
                             <div className="flex items-center gap-3">
@@ -122,10 +126,13 @@ export const JojoDepositModal = ({ aarcModal }: { aarcModal: AarcFundKitModal })
                     </div>
 
                     {/* Warning Message */}
-                    <div className="flex gap-x-2 items-start p-4 bg-[rgba(255,183,77,0.05)] border border-[rgba(255,183,77,0.2)] rounded-2xl mt-2">
+                    <div className="flex gap-x-2 w-full items-start p-4 bg-[rgba(255,183,77,0.05)] border border-[rgba(255,183,77,0.2)] rounded-2xl mt-2">
                         <img src="/info-icon.svg" alt="Info" className="w-4 h-4 mt-[2px]" />
                         <p className="text-xs font-bold text-[#F6F6F6] leading-5">
-                            The funds will be deposited in perpetual in v1.
+                            The funds will be deposited in &nbsp;
+                            <a href="https://oyster.synfutures.com/#/portfolio" target="_blank" rel="noopener noreferrer" className="underline text-[#A5E547]">
+                                Synfutures
+                            </a>
                         </p>
                     </div>
 
@@ -154,4 +161,4 @@ export const JojoDepositModal = ({ aarcModal }: { aarcModal: AarcFundKitModal })
     );
 };
 
-export default JojoDepositModal;
+export default SynfuturesDepositModal;
