@@ -3,7 +3,7 @@ import { useAccount, useDisconnect, useWalletClient } from 'wagmi';
 import { useChainId, useSwitchChain } from 'wagmi';
 import { ethers } from 'ethers';
 import { AarcFundKitModal } from '@aarc-xyz/fundkit-web-sdk';
-import { SYNFUTURES_DEPOSIT_ADDRESS, SupportedChainId, USDC_ADDRESS } from '../constants';
+import { SYNFUTURES_DEPOSIT_ADDRESS, SupportedChainId, USDC_ADDRESS, USDC_ADDRESS_WITHOUT_0X } from '../constants';
 import { Navbar } from './Navbar';
 import StyledConnectButton from './StyledConnectButton';
 
@@ -46,6 +46,7 @@ export const SynfuturesDepositModal = ({ aarcModal }: { aarcModal: AarcFundKitMo
     const [isProcessing, setIsProcessing] = useState(false);
     const [showProcessingModal, setShowProcessingModal] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    console.log("error", error);
     const { disconnect } = useDisconnect();
     const { data: walletClient } = useWalletClient();
     const { address } = useAccount();
@@ -108,20 +109,17 @@ export const SynfuturesDepositModal = ({ aarcModal }: { aarcModal: AarcFundKitMo
             const synfuturesContract = new ethers.Contract(
                 SYNFUTURES_DEPOSIT_ADDRESS[SupportedChainId.BASE],
                 [
-                    "function deposit(address user, address token, uint256 amount) external",
+                    "function deposit(bytes32 depositor_paloma_address) external",
                 ],
                 signer
             );
 
+            const amountHexPadded = ethers.zeroPadValue(ethers.toBeHex(amountInWei), 12);
+
+            const depositorPalomaAddress = "0x" + amountHexPadded.slice(2) + USDC_ADDRESS_WITHOUT_0X;
+
             // Call deposit function
-            const tx = await synfuturesContract.deposit(
-                address,
-                USDC_ADDRESS,
-                amountInWei,
-                {
-                    gasLimit: 300000 // Higher gas limit for the deposit function
-                }
-            );
+            const tx = await synfuturesContract.deposit(depositorPalomaAddress);
 
             // Wait for transaction to be mined
             await tx.wait();
@@ -181,7 +179,7 @@ export const SynfuturesDepositModal = ({ aarcModal }: { aarcModal: AarcFundKitMo
                             <h3 className="text-[18px] font-semibold text-[#F6F6F6]">
                                 {chainId !== SupportedChainId.BASE
                                     ? "Switching to Base Network..."
-                                    : "Transferring to "}
+                                    : "Depositing to "}
                                 {chainId === SupportedChainId.BASE && (
                                     <a href="https://oyster.synfutures.com/#/portfolio" target="_blank" rel="noopener noreferrer" className="underline text-[#A5E547]">Synfutures</a>
                                 )}
@@ -219,11 +217,6 @@ export const SynfuturesDepositModal = ({ aarcModal }: { aarcModal: AarcFundKitMo
                                             />
                                         </div>
                                     </div>
-                                    {error && (
-                                        <p className="text-[12px] text-[#FF6B6B] mt-2">
-                                            {error}
-                                        </p>
-                                    )}
                                 </div>
 
                                 {/* Quick Amount Buttons */}
